@@ -1,3 +1,10 @@
+import pandas
+from sklearn.preprocessing import StandardScaler
+import torch
+import torch.optim as optim
+import matplotlib.pyplot as plt
+import numpy as np
+
 def add_meteo_var(var_name, suffix, train = train, test = test, meteo = meteo):
     '''
     Adds a given meteorological variable to the train set.
@@ -24,6 +31,7 @@ def add_meteo_var(var_name, suffix, train = train, test = test, meteo = meteo):
 
 def simple_train(model, train_loader, criterion, learning_rate, num_epochs):
     '''
+    Train a simple non-aggregated model on the train set.
     '''
     model.train()
     optimizer = optim.Adam(model.parameters(), lr = learning_rate)
