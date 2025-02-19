@@ -118,3 +118,14 @@ def OL(model1, model2, alpha1, alpha2, eps = 1e-8):
 
     loss = alpha1*torch.abs(dot) + alpha2/(norm1 + eps) + alpha2/(norm2 + eps)
     return loss
+
+
+def extract_date(df, date_col = 'date'):
+    '''
+    Extracts temporal features and applies sine embedding.
+    '''
+    df['day_of_year'] = np.sin(2*np.pi*df[date_col].dt.day_of_year/365)
+    df['day_of_week'] = np.sin(2*np.pi*df[date_col].dt.day_of_week/7)
+    df['hour'] = np.sin(2*np.pi*df[date_col].dt.hour/24)
+    df['minute'] = np.sin(2*np.pi*df[date_col].dt.minute/60)
+    return df
