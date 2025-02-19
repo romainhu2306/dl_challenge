@@ -103,3 +103,18 @@ def plot_residuals(table, col, y = y_valid):
     plt.xlabel('Time')
     plt.ylabel('Residuals')
     plt.show()
+
+
+def OL(model1, model2, alpha1, alpha2, eps = 1e-8):
+    '''
+    Orthogonal loss function.
+    '''
+    params1 = torch.cat([p.view(-1) for p in model1.parameters()])
+    params2 = torch.cat([p.view(-1) for p in model2.parameters()])
+
+    dot = torch.dot(params1, params2)
+    norm1 = torch.norm(params1)
+    norm2 = torch.norm(params2)
+
+    loss = alpha1*torch.abs(dot) + alpha2/(norm1 + eps) + alpha2/(norm2 + eps)
+    return loss
