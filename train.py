@@ -8,6 +8,7 @@ import torch.optim as optim
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import holidays
+import utils
 
 # Getting device.
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -16,7 +17,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 meteo = pd.read_parquet('meteo.parquet')
-co2 = pd.read_parquet('co2_emission_france.csv')
+co2 = pd.read_csv('co2_emission_france.csv')
 
 
 # Converting to datetime.
