@@ -6,7 +6,7 @@ def add_meteo_var(var_name, suffix, train = train, test = test, meteo = meteo):
     scaler = StandardScaler()
     meteo[var_name] = scaler.fit_transform(meteo[[var_name]])
 
-    # Extracting feature per station.
+    # Pivoting feature by station.
     var = meteo[['date', var_name, 'numer_sta']]
     var = meteo.pivot_table(var, index = 'date', values = var_name, columns = 'numer_sta')
 
