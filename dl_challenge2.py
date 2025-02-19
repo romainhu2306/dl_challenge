@@ -7,8 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1OmsUQbXZ2QYnvW62s6eTGZIUka94IcbM
 """
 
-!pip install pyarrow
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
