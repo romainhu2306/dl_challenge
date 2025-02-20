@@ -179,3 +179,9 @@ mod1 = models.baseline(input_dim, output_dim).to(device)
 mod2 = models.basesine(input_dim, output_dim).to(device)
 mod3 = models.linear_aggreg(.5, .5).to(device)
 
+mod1, mod2, mod3 = utils.competitive_aggreg_train(mod1, mod2, mod3, train_loader, .01, .1, 100, .5, .5)
+
+table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, criterion, y_scaler)
+print(f"Validation loss: {loss:.4f}")
+
+utils.plot_residuals(table, 0, y_valid)
