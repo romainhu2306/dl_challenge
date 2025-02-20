@@ -91,7 +91,10 @@ test.drop(columns = 'date', inplace = True)
 
 # Preparing datasets.
 y_scaler = StandardScaler()
-
+'''
+The train set contains the first 55000 rows.
+The validation set contains the last 15000 rows.
+'''
 X_train = torch.tensor(train.iloc[:55000, 25:].values, dtype = torch.float32)
 y_train = torch.tensor(y_scaler.fit_transform(train.iloc[:55000, :25]), dtype = torch.float32)
 X_valid = torch.tensor(train.iloc[65000:, 25:].values, dtype = torch.float32)
