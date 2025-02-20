@@ -28,6 +28,8 @@ def add_meteo_var(var_name, suffix, train, test, meteo):
     train = train.merge(var_train, on = 'date', how = 'left', suffixes = ('', suffix))
     test = test.merge(var_test, on = 'date', how = 'left', suffixes = ('', suffix))
 
+    return train, test
+
 
 def simple_train(model, train_loader, criterion, learning_rate, num_epochs):
     '''
@@ -49,6 +51,8 @@ def simple_train(model, train_loader, criterion, learning_rate, num_epochs):
             ep_loss += loss.item()
         ep_loss = np.sqrt(ep_loss/len(train_loader))
         print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {ep_loss:.4f}")
+    
+    return model
 
 
 def simple_valid(model, valid_set, criterion, scaler):
