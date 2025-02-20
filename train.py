@@ -62,7 +62,8 @@ train.drop(columns = 'year', inplace = True)
 test.drop(columns = 'year', inplace = True)
 
 
-# Adding any variables we want.
+# Adding any meteorological variables we want.
+# Feel free to choose which variables to add : 't', 'ff' and 'vv' are recommended.
 train, test = utils.add_meteo_var('t', 't', train, test, meteo)
 train, test = utils.add_meteo_var('ff', 'ff', train, test, meteo)
 train, test = utils.add_meteo_var('vv', 'vv', train, test, meteo)
