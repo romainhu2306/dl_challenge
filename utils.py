@@ -193,7 +193,7 @@ def aggreg_valid(model1, model2, model3, valid_set, criterion, scaler):
 
 def plot_residuals(table, col, y):
     '''
-    Plots the residuals from an evaluation.
+    Plots the residuals from an validation.
     '''
     nrows = len(table)
     X = np.arange(nrows)
