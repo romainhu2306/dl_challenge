@@ -62,6 +62,14 @@ train.drop(columns = 'year', inplace = True)
 test.drop(columns = 'year', inplace = True)
 
 
+# Adding any variables we want.
+train, test = utils.add_meteo_var('t', 't', train, test, meteo)
+train, test = utils.add_meteo_var('ff', 'ff', train, test, meteo)
+train, test = utils.add_meteo_var('vv', 'vv', train, test, meteo)
+train, test = utils.add_meteo_var('n', 'n', train, test, meteo)
+train, test = utils.add_meteo_var('rr12', 'rr12', train, test, meteo)
+
+
 # Filling a few remaining NaNs in the test set.
 test.interpolate(method = 'linear', limit_direction = 'both', inplace = True)
 
@@ -109,7 +117,7 @@ train_loader = torch.utils.data.DataLoader(train_set, batch_size = 1024, shuffle
 # Training base model.
 input_dim = X_train.shape[1]
 output_dim = y_train.shape[1]
-base_model = models.base(input_dim, output_dim).to(device)
+base_model = models.baseline(input_dim, output_dim).to(device)
 criterion = nn.MSELoss()
 base_model = utils.simple_train(base_model, train_loader, criterion, .01, 50)
 
@@ -138,4 +146,35 @@ print(f"Validation loss: {loss:.4f}")
 
 utils.plot_residuals(table, 0, y_valid)
 
+
+# Training orthogonal aggregator.
+mod1 = models.baseline(input_dim, output_dim).to(device)
+mod2 = models.basesine(input_dim, output_dim).to(device)
+mod3 = models.basesine(input_dim, output_dim).to(device)
+
+mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 200)
+
+table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, criterion, y_scaler)
+print(f"Validation loss: {loss:.4f}")
+
+utils.plot_residuals(table, 0, y_valid)
+
+
+# Training overbase and oversine aggregator.
+mod1 = models.overbase(input_dim, output_dim).to(device)
+mod2 = models.oversine(input_dim, output_dim).to(device)
+mod3 = baseline(input_dim, output_dim).to(device)
+
+mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 200)
+
+table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, criterion, y_scaler)
+print(f"Validation loss: {loss:.4f}")
+
+utils.plot_residuals(table, 0, y_valid)
+
+
+# Training competitive aggregator.
+mod1 = models.baseline(input_dim, output_dim).to(device)
+mod2 = models.basesine(input_dim, output_dim).to(device)
+mod3 = models.linear_aggreg(.5, .5).to(device)
 

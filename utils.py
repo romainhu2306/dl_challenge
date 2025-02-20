@@ -31,12 +31,14 @@ def add_meteo_var(var_name, suffix, train, test, meteo):
     return train, test
 
 
-def simple_train(model, train_loader, criterion, learning_rate, num_epochs):
+def simple_train(model, train_loader, criterion, learning_rate, num_epochs, scheduler):
     '''
     Train a simple non-aggregated model on the train set.
     '''
     model.train()
     optimizer = optim.Adam(model.parameters(), lr = learning_rate)
+    if scheduler:
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience = 0, factor = .1)
 
     for epoch in range(num_epochs):
         ep_loss = .0
@@ -71,6 +73,101 @@ def simple_valid(model, valid_set, criterion, scaler):
     loss = criterion(table, valid_set)
     loss = np.sqrt(loss.item())
     return table, loss
+
+
+def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate, num_epochs):
+    '''
+    Train an aggregated model on the train set.
+    '''
+    model1.train()
+    model2.train()
+    model3.train()
+    opti1 = optim.Adam(model1.parameters(), lr = learning_rate)
+    opti2 = optim.Adam(model2.parameters(), lr = learning_rate)
+    opti3 = optim.Adam(model3.parameters(), lr = learning_rate)
+
+    for epoch in range(num_epochs):
+        ep_loss = .0
+        for X, y in train_loader:
+            X = X.to(device)
+            y = y.to(device)
+
+            opti1.zero_grad()
+            opti2.zero_grad()
+            opti3.zero_grad()
+
+            out1 = model1(X)
+            out2 = model2(X)
+            out12 = torch.cat((out1, out2), dim = 1)
+            out3 = model3(out12)
+        
+            loss = criterion(out3, y)
+            loss.backward()
+
+            opti1.step()
+            opti2.step()
+            opti3.step()
+
+            ep_loss += loss.item()
+        ep_loss = np.sqrt(ep_loss/len(train_loader))
+        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {ep_loss:.4f}")
+    
+    return model1, model2, model3
+
+
+def competitive_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, num_epochs, alpha1, alpha2):
+    '''
+    Trains the competitive aggregation model on the train set.
+    Each aggregated model tries to maximize it is given by the linear aggregator.
+    '''
+    model1.train()
+    model2.train()
+    model3.train()
+    opti1 = optim.Adam(model1.parameters(), lr = lr1)
+    opti2 = optim.Adam(model2.parameters(), lr = lr1)
+    opti3 = optim.Adam(model3.parameters(), lr = lr2)
+
+    mse = nn.MSELoss()
+    mae = nn.L1Loss()
+    target_weight = torch.tensor(1, dtype = torch.float32)
+
+    for epoch in range(num_epochs):
+        ep_loss = .0
+        for X, y in train_loader:
+            X = X.to(device)
+            y = y.to(device)
+
+            opti1.zero_grad()
+            opti2.zero_grad()
+            opti3.zero_grad()
+
+            out1 = model1(X)
+            out2 = model2(X)
+            out3 = model3(out1.detach(), out2.detach())
+            output = out3[0]
+            coefs = out3[1]
+        
+            loss2 = mae(coefs[1], target_weight)
+            loss2.backward(retain_graph = True)
+            opti2.step()
+
+            loss1 = mae(coefs[0], target_weight)
+            loss1.backward(retain_graph = True)
+            opti1.step()
+
+            loss3 = mse(output, y)
+            loss3.backward()
+            opti3.step()
+
+            opti1.step()
+            opti2.step()
+            opti3.step()
+
+            ep_loss += loss.item()
+        ep_loss = np.sqrt(ep_loss/len(train_loader))
+        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {ep_loss:.4f}")
+    
+    return model1, model2, model3
 
 
 def aggreg_valid(model1, model2, model3, valid_set, criterion, scaler):
@@ -122,6 +219,13 @@ def OL(model1, model2, alpha1, alpha2, eps = 1e-8):
 
     loss = alpha1*torch.abs(dot) + alpha2/(norm1 + eps) + alpha2/(norm2 + eps)
     return loss
+
+
+def OL_plus_MSE(model1, model2, alpha1, alpha2, X, y):
+    OL = OL(model1, model2, alpha1, alpha2)
+    MSE = nn.MSELoss(X, y)
+    Loss = OL + MSE
+    return Loss
 
 
 def extract_date(df, date_col = 'date'):
