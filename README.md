@@ -10,7 +10,7 @@ The data files include :
 ## PYTHON SCRIPTS
 This repository contains 3 python scripts :
 - **utils.py**, containing functions for data processing, training and validating, plotting residuals and custom loss functions ;
-- **models.py** script, containing the Pytorch code for each model :
+- **models.py**, containing the Pytorch code for each model :
     - Baseline model ;
     - Overparameterized model ;
     - Overparameterized sine model ;
