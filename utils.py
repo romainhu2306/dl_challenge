@@ -5,7 +5,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
 
-def add_meteo_var(var_name, suffix, train = train, test = test, meteo = meteo):
+def add_meteo_var(var_name, suffix, train, test, meteo):
     '''
     Adds a given meteorological variable to the train set.
     The variables are pivoted by station, normalized and upsampled to half-hour frequency.
@@ -51,7 +51,7 @@ def simple_train(model, train_loader, criterion, learning_rate, num_epochs):
         print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {ep_loss:.4f}")
 
 
-def simple_valid(model, valid_set, criterion, scaler = y_scaler):
+def simple_valid(model, valid_set, criterion, scaler):
     '''
     Evaluates a simple non-aggregated model on the validation set.
     '''
@@ -69,7 +69,7 @@ def simple_valid(model, valid_set, criterion, scaler = y_scaler):
     return table, loss
 
 
-def aggreg_valid(model1, model2, model3, valid_set, criterion, scaler = y_scaler):
+def aggreg_valid(model1, model2, model3, valid_set, criterion, scaler):
     '''
     Evaluates an aggregation model on the validation set.
     '''
@@ -90,7 +90,7 @@ def aggreg_valid(model1, model2, model3, valid_set, criterion, scaler = y_scaler
     return table, loss
 
 
-def plot_residuals(table, col, y = y_valid):
+def plot_residuals(table, col, y):
     '''
     Plots the residuals from an evaluation.
     '''
