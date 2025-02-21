@@ -115,21 +115,33 @@ def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate,
     return model1, model2, model3
 
 
-def competitive_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, num_epochs, alpha1, alpha2):
+def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, train_loader, lr1, lr2, num_epochs):
     '''
-    Trains the competitive aggregation model on the train set.
+    Trains the competitive aggregation model with 5 competitors.
     Each aggregated model tries to maximize it is given by the linear aggregator.
+    This function also plots the trajectories of the weights for each model.
     '''
     model1.train()
     model2.train()
     model3.train()
+    model4.train()
+    model5.train()
+    aggreg.train()
     opti1 = optim.Adam(model1.parameters(), lr = lr1)
     opti2 = optim.Adam(model2.parameters(), lr = lr1)
-    opti3 = optim.Adam(model3.parameters(), lr = lr2)
+    opti3 = optim.Adam(model3.parameters(), lr = lr1)
+    opti4 = optim.Adam(model4.parameters(), lr = lr1)
+    opti5 = optim.Adam(model5.parameters(), lr = lr1)
+    opti_aggreg = optim.Adam(aggreg.parameters(), lr = lr2)
 
     mse = nn.MSELoss()
     mae = nn.L1Loss()
     target_weight = torch.tensor(1, dtype = torch.float32)
+    coefs_list1 = []
+    coefs_list2 = []
+    coefs_list3 = []
+    coefs_list4 = []
+    coefs_list5 = []
 
     for epoch in range(num_epochs):
         ep_loss = .0
@@ -140,13 +152,31 @@ def competitive_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, num
             opti1.zero_grad()
             opti2.zero_grad()
             opti3.zero_grad()
+            opti4.zero_grad()
+            opti5.zero_grad()
+            opti_aggreg.zero_grad()
 
             out1 = model1(X)
             out2 = model2(X)
-            out3 = model3(out1.detach(), out2.detach())
-            output = out3[0]
-            coefs = out3[1]
+            out3 = model3(X)
+            out4 = model4(X)
+            out5 = model5(X)
+            out_aggreg = aggreg(out1, out2, out3, out4, out5)
+            output = out_aggreg[0]
+            coefs = out_aggreg[1]
         
+            loss5 = mae(coefs[4], target_weight)
+            loss5.backward(retain_graph = True)
+            opti5.step()
+
+            loss4 = mae(coefs[3], target_weight)
+            loss4.backward(retain_graph = True)
+            opti4.step()
+
+            loss3 = mae(coefs[2], target_weight)
+            loss3.backward(retain_graph = True)
+            opti3.step()
+
             loss2 = mae(coefs[1], target_weight)
             loss2.backward(retain_graph = True)
             opti2.step()
@@ -155,9 +185,9 @@ def competitive_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, num
             loss1.backward(retain_graph = True)
             opti1.step()
 
-            loss3 = mse(output, y)
-            loss3.backward()
-            opti3.step()
+            loss_aggreg = mse(output, y)
+            loss_aggreg.backward()
+            opti_aggreg.step()
 
             opti1.step()
             opti2.step()
@@ -165,9 +195,17 @@ def competitive_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, num
 
             ep_loss += loss.item()
         ep_loss = np.sqrt(ep_loss/len(train_loader))
-        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {ep_loss:.4f}")
     
-    return model1, model2, model3
+    X_axis = np.arange(0, len(coefs_list1))
+    plt.plot(X_axis, coefs_list1, label = 'a1')
+    plt.plot(X_axis, coefs_list2, label = 'a2')
+    plt.plot(X_axis, coefs_list3, label = 'a3')
+    plt.plot(X_axis, coefs_list4, label = 'a4')
+    plt.plot(X_axis, coefs_list5, label = 'a5')
+    plt.legend()
+    plt.show()
+    
+    return model1, model2, model3, model4, model5
 
 
 def aggreg_valid(model1, model2, model3, valid_set, criterion, scaler):
@@ -222,6 +260,9 @@ def OL(model1, model2, alpha1, alpha2, eps = 1e-8):
 
 
 def OL_plus_MSE(model1, model2, alpha1, alpha2, X, y):
+    '''
+    MSE loss + Orthogonal loss.
+    '''
     OL = OL(model1, model2, alpha1, alpha2)
     MSE = nn.MSELoss(X, y)
     Loss = OL + MSE
