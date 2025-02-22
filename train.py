@@ -17,10 +17,10 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
 # Loading files.
-train = pd.read_csv('train.csv')
-test = pd.read_csv('test.csv')
-meteo = pd.read_parquet('meteo.parquet')
-co2 = pd.read_csv('co2_emission_france.csv')
+train = pd.read_csv('data/train.csv')
+test = pd.read_csv('data/test.csv')
+meteo = pd.read_parquet('data/meteo.parquet')
+co2 = pd.read_csv('data/co2_emission_france.csv')
 
 
 # Converting to datetime.
@@ -44,12 +44,8 @@ train.drop(columns = ['day_of_year', 'hour'], inplace = True)
 
 
 # Adding CO2 emissions per year.
-co2.rename(columns = {'Year':'year', 'CO2 emissions from fuel combustion, France':'co2'}, inplace = True)
-co2.drop(columns = 'Units', inplace = True)
-'''
-CO2 emissions values are normalized and merged on year.
-'''
 scaler = StandardScaler()
+co2.drop(columns = 'Units', inplace = True)
 co2['co2'] = scaler.fit_transform(co2[['co2']])
 
 train['year'] = train['date'].dt.year
@@ -60,7 +56,6 @@ test = test.merge(co2, how = 'left', on = 'year')
 
 train.drop(columns = 'year', inplace = True)
 test.drop(columns = 'year', inplace = True)
-
 
 # Adding any meteorological variables we want.
 # Feel free to choose which variables to add : 't', 'ff' and 'vv' are recommended.
@@ -82,8 +77,8 @@ test = utils.extract_date(test)
 
 # Adding days-off.
 fr_holidays = holidays.France()
-train['day_off'] = train['date'].apply(lambda x: x in fr_holidays).astype(int)
-test['day_off'] = test['date'].apply(lambda x: x in fr_holidays).astype(int)
+train['BH'] = train['date'].apply(lambda x: x in fr_holidays).astype(int)
+test['BH'] = test['date'].apply(lambda x: x in fr_holidays).astype(int)
 
 
 # Adding covid confinement.
