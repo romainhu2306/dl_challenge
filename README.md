@@ -2,7 +2,7 @@
 This repository contains all the files related to our work, including data, python scripts and predictions.
 
 ## DATA
-The data files include :
+The data file includes :
 - The train and test sets from codabench in .csv format ;
 - Annual CO2 emission for France in .csv format
 - Meteorological data from codabench in parquet format.
