@@ -39,6 +39,7 @@ def add_meteo_var(var_name, suffix, train, test, meteo):
 def simple_train(model, train_loader, criterion, learning_rate, num_epochs, device, scheduler = False):
     '''
     Train a simple non-aggregated model on the train set.
+    You can choose to activate the learning rate scheduler with scheduler = True.
     '''
     model.train()
     optimizer = optim.Adam(model.parameters(), lr = learning_rate)

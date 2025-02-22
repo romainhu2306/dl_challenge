@@ -104,7 +104,7 @@ The validation set contains the last 20000 rows.
 X_train = torch.tensor(train.iloc[:55000, 25:].values, dtype = torch.float32)
 y_train = torch.tensor(y_scaler.fit_transform(train.iloc[:55000, :25]), dtype = torch.float32)
 X_valid = torch.tensor(train.iloc[65000:, 25:].values, dtype = torch.float32)
-y_valid = torch.tensor(y_scaler.fit_transform(train.iloc[65000:, :25]), dtype = torch.float32)
+y_valid = torch.tensor(train.iloc[65000:, :25].values, dtype = torch.float32)
 
 X_test = torch.tensor(test.values, dtype = torch.float32)
 
@@ -127,7 +127,7 @@ utils.plot_residuals(table, 0, y_valid)
 
 # Training oversine model.
 oversine_model = models.oversine(input_dim, output_dim).to(device)
-oversine_model = utils.simple_train(oversine_model, train_loader, criterion, .01, 50)
+oversine_model = utils.simple_train(oversine_model, train_loader, criterion, .01, 50, device)
 
 table, loss = utils.simple_valid(oversine_model, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
@@ -137,7 +137,7 @@ utils.plot_residuals(table, 0, y_valid)
 
 # Training overbase model.
 overbase_model = models.overbase(input_dim, output_dim).to(device)
-overbase_model = utils.simple_train(overbase_model, train_loader, criterion, .01, 50)
+overbase_model = utils.simple_train(overbase_model, train_loader, criterion, .01, 100, device)
 
 table, loss = utils.simple_valid(overbase_model, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
