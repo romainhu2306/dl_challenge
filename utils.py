@@ -1,9 +1,10 @@
-import pandas
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 def add_meteo_var(var_name, suffix, train, test, meteo):
     '''
@@ -11,10 +12,11 @@ def add_meteo_var(var_name, suffix, train, test, meteo):
     The variables are pivoted by station, normalized and upsampled to half-hour frequency.
     '''
     scaler = StandardScaler()
-    meteo[var_name] = scaler.fit_transform(meteo[[var_name]])
+    df = meteo
+    df[var_name] = scaler.fit_transform(df[[var_name]])
 
     # Pivoting feature by station.
-    var = meteo[['date', var_name, 'numer_sta']]
+    var = df[['date', var_name, 'numer_sta']]
     var = pd.pivot_table(var, values = var_name, index = 'date', columns = 'numer_sta')
 
     # Keeping only the stations with less than 30% of Nan values.
