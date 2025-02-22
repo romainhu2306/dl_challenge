@@ -66,12 +66,12 @@ def simple_valid(model, X_valid, y_valid, criterion, scaler):
     '''
     Evaluates a simple non-aggregated model on the validation set.
     '''
-    nrows = len(valid_set)
+    nrows = len(X_valid)
     table = torch.empty(nrows, 25)
     model.eval()
     with torch.no_grad():
         for i in range(nrows):
-            x = valid_set[i].unsqueeze(0)
+            x = X_valid[i].unsqueeze(0)
             x = model(x)
             table[i] = x[0]
     table = torch.tensor(scaler.inverse_transform(table), dtype = torch.float32)
@@ -217,12 +217,12 @@ def aggreg_valid(model1, model2, model3, X_valid, y_valid, criterion, scaler):
     '''
     Evaluates an aggregation model on the validation set.
     '''
-    nrows = len(valid_set)
+    nrows = len(X_valid)
     table = torch.empty(nrows, 25)
     model.eval()
     with torch.no_grad():
         for i in range(nrows):
-            x = valid_set[i].unsqueeze(0)
+            x = X_valid[i].unsqueeze(0)
             x1 = model1(x)
             x2 = model2(x)
             x12 = torch.cat((x1, x2), dim = 1)
