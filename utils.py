@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import torch
+import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
@@ -199,7 +200,12 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
             opti2.step()
             opti3.step()
 
-            ep_loss += loss.item()
+            coefs_list1.append(coefs[0].item())
+            coefs_list2.append(coefs[1].item())
+            coefs_list3.append(coefs[2].item())
+            coefs_list4.append(coefs[3].item())
+            coefs_list5.append(coefs[4].item())
+            ep_loss += loss_aggreg.item()
         ep_loss = np.sqrt(ep_loss/len(train_loader))
     
     X_axis = np.arange(0, len(coefs_list1))
@@ -220,7 +226,9 @@ def aggreg_valid(model1, model2, model3, X_valid, y_valid, criterion, scaler):
     '''
     nrows = len(X_valid)
     table = torch.empty(nrows, 25)
-    model.eval()
+    model1.eval()
+    model2.eval()
+    model3.eval()
     with torch.no_grad():
         for i in range(nrows):
             x = X_valid[i].unsqueeze(0)

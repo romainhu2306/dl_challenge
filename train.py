@@ -148,9 +148,9 @@ utils.plot_residuals(table, 0, y_valid)
 # Training orthogonal aggregator.
 mod1 = models.baseline(input_dim, output_dim).to(device)
 mod2 = models.baseline(input_dim, output_dim).to(device)
-mod3 = models.baseline(input_dim, output_dim).to(device)
+mod3 = models.baseline(2*output_dim, output_dim).to(device)
 
-mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 200, device)
+mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 70, device)
 
 table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
@@ -161,7 +161,7 @@ utils.plot_residuals(table, 0, y_valid)
 # Training overbase and oversine aggregator.
 mod1 = models.overbase(input_dim, output_dim).to(device)
 mod2 = models.oversine(input_dim, output_dim).to(device)
-mod3 = baseline(input_dim, output_dim).to(device)
+mod3 = models.baseline(2*output_dim, output_dim).to(device)
 
 mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 200, device)
 
@@ -173,10 +173,10 @@ utils.plot_residuals(table, 0, y_valid)
 
 # Training competitive aggregator.
 mod1 = models.baseline(input_dim, output_dim).to(device)
-mod2 = models.basesine(input_dim, output_dim).to(device)
+mod2 = models.baseline(input_dim, output_dim).to(device)
 mod3 = models.baseline(input_dim, output_dim).to(device)
-mod4 = models.basesine(input_dim, output_dim).to(device)
+mod4 = models.baseline(input_dim, output_dim).to(device)
 mod5 = models.baseline(input_dim, output_dim).to(device)
-aggreg = models.linear_aggreg(.2, .2, .2, .2, .2).to(device)
+aggreg = models.linear_aggreg(.4, .1, .1, .2, .2).to(device)
 
 mod1, mod2, mod3, mod4, mod5 = utils.competitive_aggreg_train(mod1, mod2, mod3, mod4, mod5, aggreg, train_loader, .01, .1, 2, device)
