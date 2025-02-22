@@ -15,7 +15,10 @@ def add_meteo_var(var_name, suffix, train, test, meteo):
 
     # Pivoting feature by station.
     var = meteo[['date', var_name, 'numer_sta']]
-    var = meteo.pivot_table(var, index = 'date', values = var_name, columns = 'numer_sta')
+    var = pd.pivot_table(var, values = var_name, index = 'date', columns = 'numer_sta')
+
+    # Keeping only the stations with less than 30% of Nan values.
+    var = var.loc[:, var.isna().mean() < .3]
 
     # Upsampling to half-hour frequency.
     var = var.resample('30min').interpolate(method = 'linear', limit_direction = 'both')

@@ -57,13 +57,44 @@ test = test.merge(co2, how = 'left', on = 'year')
 train.drop(columns = 'year', inplace = True)
 test.drop(columns = 'year', inplace = True)
 
+
+def add_meteo_var(var_name, suffix, train, test, meteo):
+    '''
+    Adds a given meteorological variable to the train set.
+    The variables are pivoted by station, normalized and upsampled to half-hour frequency.
+    '''
+    scaler = StandardScaler()
+    meteo[var_name] = scaler.fit_transform(meteo[[var_name]])
+
+    # Pivoting feature by station.
+    var = meteo[['date', var_name, 'numer_sta']]
+    var = pd.pivot_table(var, values = var_name, index = 'date', columns = 'numer_sta')
+
+    # Keeping only the stations with less than 30% of Nan values.
+    var = var.loc[:, var.isna().mean() < .3]
+
+    # Upsampling to half-hour frequency.
+    var = var.resample('30min').interpolate(method = 'linear', limit_direction = 'both')
+
+    # Dividing train and test sets.
+    var_train = var.loc['2017-02-13 00:30:00+00:00':'2021-12-31 22:30:00+00:00'].reset_index()
+    var_test = var.loc['2021-12-31 23:00:00+00:00':].reset_index()
+
+    # Merging with train and test sets.
+    train = train.merge(var_train, on = 'date', how = 'left', suffixes = ('', suffix))
+    test = test.merge(var_test, on = 'date', how = 'left', suffixes = ('', suffix))
+
+    return train, test
+
+
 # Adding any meteorological variables we want.
-# Feel free to choose which variables to add : 't', 'ff' and 'vv' are recommended.
-train, test = utils.add_meteo_var('t', 't', train, test, meteo)
-train, test = utils.add_meteo_var('ff', 'ff', train, test, meteo)
-train, test = utils.add_meteo_var('vv', 'vv', train, test, meteo)
-train, test = utils.add_meteo_var('n', 'n', train, test, meteo)
-train, test = utils.add_meteo_var('rr12', 'rr12', train, test, meteo)
+# Feel free to choose which variables to add : 't', 'ff' and 'pres' are recommended.
+train, test = utils.add_meteo_var('t', '_t', train, test, meteo)
+train, test = utils.add_meteo_var('ff', '_ff', train, test, meteo)
+train, test = utils.add_meteo_var('pres', '_pres', train, test, meteo)
+train, test = utils.add_meteo_var('vv', '_vv', train, test, meteo)
+train, test = utils.add_meteo_var('n', '_n', train, test, meteo)
+train, test = utils.add_meteo_var('rr12', '_rr12', train, test, meteo)
 
 
 # Filling a few remaining NaNs in the test set.
