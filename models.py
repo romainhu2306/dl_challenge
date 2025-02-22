@@ -84,11 +84,11 @@ class linear_aggreg(nn.Module):
     Linear aggregator for ensembling.
     Softmax is applied to the parameters to keep them between 0 and 1.
     '''
-    def __init__(self, a1, a2):
+    def __init__(self, a1, a2, a3, a4, a5):
         super(linear_aggreg, self).__init__()
-        self.raw_coefs = nn.Parameter(torch.tensor([a1, a2]), requires_grad=True)
+        self.raw_coefs = nn.Parameter(torch.tensor([a1, a2, a3, a4, a5]), requires_grad = True)
     
-    def forward(self, out1, out2):
-        coefs = torch.softmax(self.raw_coefs, dim=0)
-        x = coefs[0] * out1 + coefs[1] * out2
+    def forward(self, out1, out2, out3, out4, out5):
+        coefs = torch.softmax(self.raw_coefs, dim = 0)
+        x = coefs[0] * out1 + coefs[1] * out2 + coefs[2] * out3 + coefs[3] * out4 + coefs[4] * out5
         return x, coefs

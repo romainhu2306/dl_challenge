@@ -81,7 +81,7 @@ def simple_valid(model, X_valid, y_valid, criterion, scaler):
     return table, loss
 
 
-def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate, num_epochs):
+def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate, num_epochs, device):
     '''
     Train an aggregated model on the train set.
     '''
@@ -121,7 +121,7 @@ def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate,
     return model1, model2, model3
 
 
-def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, train_loader, lr1, lr2, num_epochs):
+def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, train_loader, lr1, lr2, num_epochs, device):
     '''
     Trains the competitive aggregation model with 5 competitors.
     Each aggregated model tries to maximize it is given by the linear aggregator.
