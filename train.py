@@ -12,8 +12,8 @@ import utils
 import models
 
 
-# Getting device.
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+# Setting device.
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # Loading files.
@@ -117,9 +117,9 @@ input_dim = X_train.shape[1]
 output_dim = y_train.shape[1]
 base_model = models.baseline(input_dim, output_dim).to(device)
 criterion = nn.MSELoss()
-base_model = utils.simple_train(base_model, train_loader, criterion, .01, 50)
+base_model = utils.simple_train(base_model, train_loader, criterion, .01, 50, device, scheduler = True)
 
-table, loss = utils.simple_valid(base_model, X_valid, criterion, y_scaler)
+table, loss = utils.simple_valid(base_model, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
 
 utils.plot_residuals(table, 0, y_valid)
@@ -129,7 +129,7 @@ utils.plot_residuals(table, 0, y_valid)
 oversine_model = models.oversine(input_dim, output_dim).to(device)
 oversine_model = utils.simple_train(oversine_model, train_loader, criterion, .01, 50)
 
-table, loss = utils.simple_valid(oversine_model, X_valid, criterion, y_scaler)
+table, loss = utils.simple_valid(oversine_model, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
 
 utils.plot_residuals(table, 0, y_valid)
@@ -139,7 +139,7 @@ utils.plot_residuals(table, 0, y_valid)
 overbase_model = models.overbase(input_dim, output_dim).to(device)
 overbase_model = utils.simple_train(overbase_model, train_loader, criterion, .01, 50)
 
-table, loss = utils.simple_valid(overbase_model, X_valid, criterion, y_scaler)
+table, loss = utils.simple_valid(overbase_model, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
 
 utils.plot_residuals(table, 0, y_valid)
@@ -152,7 +152,7 @@ mod3 = models.basesine(input_dim, output_dim).to(device)
 
 mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 200)
 
-table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, criterion, y_scaler)
+table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
 
 utils.plot_residuals(table, 0, y_valid)
@@ -165,7 +165,7 @@ mod3 = baseline(input_dim, output_dim).to(device)
 
 mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 200)
 
-table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, criterion, y_scaler)
+table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
 
 utils.plot_residuals(table, 0, y_valid)
@@ -177,8 +177,3 @@ mod2 = models.basesine(input_dim, output_dim).to(device)
 mod3 = models.linear_aggreg(.5, .5).to(device)
 
 mod1, mod2, mod3 = utils.competitive_aggreg_train(mod1, mod2, mod3, train_loader, .01, .1, 100, .5, .5)
-
-table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, criterion, y_scaler)
-print(f"Validation loss: {loss:.4f}")
-
-utils.plot_residuals(table, 0, y_valid)

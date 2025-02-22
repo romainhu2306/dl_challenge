@@ -36,7 +36,7 @@ def add_meteo_var(var_name, suffix, train, test, meteo):
     return train, test
 
 
-def simple_train(model, train_loader, criterion, learning_rate, num_epochs, scheduler):
+def simple_train(model, train_loader, criterion, learning_rate, num_epochs, device, scheduler = False):
     '''
     Train a simple non-aggregated model on the train set.
     '''
@@ -62,7 +62,7 @@ def simple_train(model, train_loader, criterion, learning_rate, num_epochs, sche
     return model
 
 
-def simple_valid(model, valid_set, criterion, scaler):
+def simple_valid(model, X_valid, y_valid, criterion, scaler):
     '''
     Evaluates a simple non-aggregated model on the validation set.
     '''
@@ -75,7 +75,7 @@ def simple_valid(model, valid_set, criterion, scaler):
             x = model(x)
             table[i] = x[0]
     table = torch.tensor(scaler.inverse_transform(table), dtype = torch.float32)
-    loss = criterion(table, valid_set)
+    loss = criterion(table, y_valid)
     loss = np.sqrt(loss.item())
     return table, loss
 
@@ -213,7 +213,7 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
     return model1, model2, model3, model4, model5
 
 
-def aggreg_valid(model1, model2, model3, valid_set, criterion, scaler):
+def aggreg_valid(model1, model2, model3, X_valid, y_valid, criterion, scaler):
     '''
     Evaluates an aggregation model on the validation set.
     '''
@@ -229,7 +229,7 @@ def aggreg_valid(model1, model2, model3, valid_set, criterion, scaler):
             x3 = model3(x12)
             table[i] = x3[0]
     table = torch.tensor(scaler.inverse_transform(table), dtype = torch.float32)
-    loss = criterion(table, valid_set)
+    loss = criterion(table, y_valid)
     loss = np.sqrt(loss.item())
     return table, loss
 
