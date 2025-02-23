@@ -7,11 +7,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+############################################################################################################
+############################################################################################################
 def add_meteo_var(var_name, suffix, train, test, meteo):
     '''
-    Adds a given meteorological variable to the train set.
+    Adds a given meteorological variable to the train and test sets.
     The variables are pivoted by station, normalized and upsampled to half-hour frequency.
+    Returns the updated train and test sets.
+
+    - var_name : 't', 'ff', 'u', 'vv', 'pres', 'n', 'u', etc. ;
+    - suffix : suffix argument for pd.pivot_table to avoid duplicating station names ;
+    - train/test : train and test sets ;
+    - meteo : meteorological data.
+    
     '''
+    # Normalizing the variable.
     scaler = StandardScaler()
     df = meteo
     df[var_name] = scaler.fit_transform(df[[var_name]])
@@ -37,16 +47,44 @@ def add_meteo_var(var_name, suffix, train, test, meteo):
     return train, test
 
 
+############################################################################################################
+############################################################################################################
+def extract_date(df, date_col = 'date'):
+    '''
+    Extracts temporal features from a dataframe and applies sine embedding to them.
+    Returns the updated dataframe with temporal features.
+
+    - df : dataframe with datetime features ;
+    - date_col : name of the datetime column.
+    '''
+    df['day_of_year'] = np.sin(2*np.pi*df[date_col].dt.day_of_year/365)
+    df['day_of_week'] = np.sin(2*np.pi*df[date_col].dt.day_of_week/7)
+    df['hour'] = np.sin(2*np.pi*df[date_col].dt.hour/24)
+    df['minute'] = np.sin(2*np.pi*df[date_col].dt.minute/60)
+    return df
+
+
+############################################################################################################
+############################################################################################################
 def simple_train(model, train_loader, criterion, learning_rate, num_epochs, device, scheduler = False):
     '''
-    Train a simple non-aggregated model on the train set.
-    You can choose to activate the learning rate scheduler with scheduler = True.
+    Trains a simple non-aggregated model.
+    Returns the trained model.
+
+    - model : model to train ;
+    - train_loader : pytorch dataloader for training ;
+    - criterion : loss function ;
+    - learning_rate : scalar ;
+    - num_epochs : int ;
+    - device : 'cuda' or 'cpu' ;
+    - scheduler : activates ReduceLROnPlateau scheduler with True.
     '''
     model.train()
     optimizer = optim.Adam(model.parameters(), lr = learning_rate)
     if scheduler:
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience = 0, factor = .1)
 
+    # Training loop.
     for epoch in range(num_epochs):
         ep_loss = .0
         for X, y in train_loader:
@@ -64,13 +102,24 @@ def simple_train(model, train_loader, criterion, learning_rate, num_epochs, devi
     return model
 
 
+############################################################################################################
+############################################################################################################
 def simple_valid(model, X_valid, y_valid, criterion, scaler):
     '''
-    Evaluates a simple non-aggregated model on the validation set.
+    Evaluates a simple non-aggregated model.
+    Returns the predictions and the loss.
+
+    - model : model to evaluate ;
+    - X_valid : validation set features ;
+    - y_valid : validation set targets ;
+    - criterion : loss function ;
+    - scaler : StandardScaler from sickit-learn that was used to scale target features.
     '''
     nrows = len(X_valid)
     table = torch.empty(nrows, 25)
     model.eval()
+
+    # Evaluation loop.
     with torch.no_grad():
         for i in range(nrows):
             x = X_valid[i].unsqueeze(0)
@@ -82,9 +131,21 @@ def simple_valid(model, X_valid, y_valid, criterion, scaler):
     return table, loss
 
 
+############################################################################################################
+############################################################################################################
 def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate, num_epochs, device):
     '''
-    Train an aggregated model on the train set.
+    Trains an  aggregation model.
+    Returns the trained models.
+
+    - model1 : first aggregated model ;
+    - model2 : second aggregated model ;
+    - model3 : aggregator ;
+    - train_loader : pytorch dataloader for training ;
+    - criterion : loss function ;
+    - learning_rate : scalar ;
+    - num_epochs : int ;
+    - device : 'cuda' or 'cpu' ;
     '''
     model1.train()
     model2.train()
@@ -93,6 +154,7 @@ def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate,
     opti2 = optim.Adam(model2.parameters(), lr = learning_rate)
     opti3 = optim.Adam(model3.parameters(), lr = learning_rate)
 
+    # Training loop.
     for epoch in range(num_epochs):
         ep_loss = .0
         for X, y in train_loader:
@@ -105,6 +167,8 @@ def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate,
 
             out1 = model1(X)
             out2 = model2(X)
+
+            # Aggregator takes the concatenation of the outputs of the two models.
             out12 = torch.cat((out1, out2), dim = 1)
             out3 = model3(out12)
         
@@ -122,9 +186,21 @@ def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate,
     return model1, model2, model3
 
 
+############################################################################################################
+############################################################################################################
 def OL_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, alpha1, alpha2, num_epochs, device):
     '''
-    Train the orthogonal-aggregated model on the train set.
+    Trains the orthogonal-aggregated model.
+    Returns the trained models.
+
+    - model1 : first aggregated model ;
+    - model2 : second aggregated model ;
+    - model3 : aggregator ;
+    - train_loader : pytorch dataloader for training ;
+    - lr1 : learning rate for aggregated models ;
+    - lr2 : learning rate for aggregator ;
+    - num_epochs : int ;
+    - device : 'cuda' or 'cpu' ;
     '''
     model1.train()
     model2.train()
@@ -133,6 +209,7 @@ def OL_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, alpha1, alph
     opti2 = optim.Adam(model2.parameters(), lr = lr1)
     opti3 = optim.Adam(model3.parameters(), lr = lr2)
 
+    # Training loop.
     for epoch in range(num_epochs):
         ep_loss = .0
         for X, y in train_loader:
@@ -145,10 +222,13 @@ def OL_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, alpha1, alph
 
             out1 = model1(X)
             out2 = model2(X)
+
+            # Aggregator takes the concatenation of the outputs of the two models.
             out12 = torch.cat((out1, out2), dim = 1)
             out3 = model3(out12)
-        
-            mse_loss = criterion(out3, y)
+
+            # Loss function is the sum of the MSE loss and the Orthogonal loss.
+            mse_loss = nn.MSELoss(out3, y)
             OL_loss = OL(model1, model2, alpha1, alpha2)
             loss = mse_loss + OL_loss
             loss.backward()
@@ -164,11 +244,28 @@ def OL_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, alpha1, alph
     return model1, model2, model3
 
 
+
+############################################################################################################
+############################################################################################################
 def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, train_loader, lr1, lr2, num_epochs, device):
     '''
     Trains the competitive aggregation model with 5 competitors.
-    Each aggregated model tries to maximize it is given by the linear aggregator.
-    This function also plots the trajectories of the weights for each model.
+    Each aggregated model is trained using the L1 loss between its aggregation weight
+    and the target weight of 1.
+    The aggregator is trained using the standard MSE loss.
+    Returns the trained models and plots the trajectories of their weights through iterations.
+
+    - model1 : first competitor model ;
+    - model2 : second competitor model ;
+    - model3 : third competitor model ;
+    - model4 : fourth competitor model ;
+    - model5 : fifth competitor model ;
+    - aggreg : linear aggregator ;
+    - train_loader : pytorch dataloader for training ;
+    - lr1 : learning rate for competitors ;
+    - lr2 : learning rate for aggregator ;
+    - num_epochs : int ;
+    - device : 'cuda' or 'cpu' ;
     '''
     model1.train()
     model2.train()
@@ -192,6 +289,7 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
     coefs_list4 = []
     coefs_list5 = []
 
+    # Training loop.
     for epoch in range(num_epochs):
         ep_loss = .0
         for X, y in train_loader:
@@ -210,10 +308,14 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
             out3 = model3(X)
             out4 = model4(X)
             out5 = model5(X)
-            out_aggreg = aggreg(out1, out2, out3, out4, out5)
-            output = out_aggreg[0]
-            coefs = out_aggreg[1]
-        
+
+            # Detach outputs to avoid backpropagation through the aggregated model.
+            out_aggreg = aggreg(out1.detach(), out2.detach(), out3.detach(), out4.detach(), out5.detach())
+            output = out_aggreg[0] # Get aggregated output.
+            coefs = out_aggreg[1] # Get aggregation weights for each model.
+
+            # Loss for the aggregated models is computed using the L1 loss between their current
+            # aggregation weight and the target weight of 1.
             loss5 = mae(coefs[4], target_weight)
             loss5.backward(retain_graph = True)
             opti5.step()
@@ -234,6 +336,7 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
             loss1.backward(retain_graph = True)
             opti1.step()
 
+            # Loss for the aggregator is the standard MSE loss.
             loss_aggreg = mse(output, y)
             loss_aggreg.backward()
             opti_aggreg.step()
@@ -250,6 +353,7 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
             ep_loss += loss_aggreg.item()
         ep_loss = np.sqrt(ep_loss/len(train_loader))
     
+    # Plotting the trajectories of the weights.
     X_axis = np.arange(0, len(coefs_list1))
     plt.plot(X_axis, coefs_list1, label = 'a1')
     plt.plot(X_axis, coefs_list2, label = 'a2')
@@ -262,20 +366,36 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
     return model1, model2, model3, model4, model5
 
 
+
+############################################################################################################
+############################################################################################################
 def aggreg_valid(model1, model2, model3, X_valid, y_valid, criterion, scaler):
     '''
-    Evaluates an aggregation model on the validation set.
+    Evaluates an aggregation model.
+    Returns the predictions and the loss.
+
+    - model1 : first aggregated model ;
+    - model2 : second aggregated model ;
+    - model3 : aggregator ;
+    - X_valid : validation set features ;
+    - y_valid : validation set targets ;
+    - criterion : loss function ;
+    - scaler : StandardScaler from sickit-learn that was used to scale target features.
     '''
     nrows = len(X_valid)
     table = torch.empty(nrows, 25)
     model1.eval()
     model2.eval()
     model3.eval()
+
+    # Evaluation loop.
     with torch.no_grad():
         for i in range(nrows):
             x = X_valid[i].unsqueeze(0)
             x1 = model1(x)
             x2 = model2(x)
+
+            # Aggregator takes the concatenation of the outputs of the two models.
             x12 = torch.cat((x1, x2), dim = 1)
             x3 = model3(x12)
             table[i] = x3[0]
@@ -285,9 +405,16 @@ def aggreg_valid(model1, model2, model3, X_valid, y_valid, criterion, scaler):
     return table, loss
 
 
+
+############################################################################################################
+############################################################################################################
 def plot_residuals(table, col, y):
     '''
     Plots the residuals from a validation.
+
+    - table : validation set ;
+    - col : column index of the feature to evaluate ;
+    - y : target features.
     '''
     nrows = len(table)
     X = np.arange(nrows)
@@ -300,9 +427,23 @@ def plot_residuals(table, col, y):
     plt.show()
 
 
+
+############################################################################################################
+############################################################################################################
 def OL(model1, model2, alpha1, alpha2, eps = 1e-8):
     '''
-    Orthogonal loss function.
+    Returns the orthogonal loss function between 2 models of identical architactures.
+    The orthogonal loss is the sum of :
+    - the absolute value of the dot product between the parameters of
+    the two models : this encourages orthogonality ;
+    - the inverse of the norms of the parameters of the two models : this avoids models
+    to converge to zero.
+
+    - model1 : first model ;
+    - model2 : second model with identical architecture to model1 ;
+    - alpha1 : scalar ;
+    - alpha2 : scalar ;
+    - eps : small value to avoid division by zero.
     '''
     params1 = torch.cat([p.view(-1) for p in model1.parameters()])
     params2 = torch.cat([p.view(-1) for p in model2.parameters()])
@@ -313,24 +454,4 @@ def OL(model1, model2, alpha1, alpha2, eps = 1e-8):
 
     loss = alpha1*torch.abs(dot) + alpha2/(norm1 + eps) + alpha2/(norm2 + eps)
     return loss
-
-
-def OL_plus_MSE(model1, model2, alpha1, alpha2, X, y):
-    '''
-    MSE loss + Orthogonal loss.
-    '''
-    OL = OL(model1, model2, alpha1, alpha2)
-    MSE = nn.MSELoss(X, y)
-    Loss = OL + MSE
-    return Loss
-
-
-def extract_date(df, date_col = 'date'):
-    '''
-    Extracts temporal features and applies sine embedding.
-    '''
-    df['day_of_year'] = np.sin(2*np.pi*df[date_col].dt.day_of_year/365)
-    df['day_of_week'] = np.sin(2*np.pi*df[date_col].dt.day_of_week/7)
-    df['hour'] = np.sin(2*np.pi*df[date_col].dt.hour/24)
-    df['minute'] = np.sin(2*np.pi*df[date_col].dt.minute/60)
-    return df
+    

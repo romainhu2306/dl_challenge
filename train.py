@@ -12,7 +12,11 @@ import utils
 import models
 
 
-# Setting device.
+################################################################################
+# DATA PROCESSING
+################################################################################
+
+# Getting device.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
@@ -23,19 +27,20 @@ meteo = pd.read_parquet('data/meteo.parquet')
 co2 = pd.read_csv('data/co2_emission_france.csv')
 
 
-# Converting to datetime.
+# Converting dates to datetime.
 train['date'] = pd.to_datetime(train['date'], utc = True)
 test['date'] = pd.to_datetime(test['date'], utc = True)
 meteo['date'] = pd.to_datetime(meteo['date'], utc = True)
 
 
 # Filling nan values for metropolises.
-train['day_of_year'] = train['date'].dt.day_of_year
-train['hour'] = train['date'].dt.hour
 '''
 Each metropolis is grouped by day of year and hour, and the missing values are filled
 with the mean of the group.
 '''
+train['day_of_year'] = train['date'].dt.day_of_year
+train['hour'] = train['date'].dt.hour
+
 for col in train.columns:
   if col not in ['date', 'day_of_year', 'hour']:
     train[col] = train[col].fillna(train.groupby(['day_of_year', 'hour'])[col].transform('mean'))
@@ -43,7 +48,7 @@ for col in train.columns:
 train.drop(columns = ['day_of_year', 'hour'], inplace = True)
 
 
-# Adding CO2 emissions per year.
+# Adding scaled CO2 emissions per year.
 scaler = StandardScaler()
 co2.drop(columns = 'Units', inplace = True)
 co2['co2'] = scaler.fit_transform(co2[['co2']])
@@ -59,7 +64,7 @@ test.drop(columns = 'year', inplace = True)
 
 
 # Adding any meteorological variables we want.
-# Feel free to choose which variables to add : 't', 'ff' and 'pres' are recommended.
+# Feel free to choose which variables to add : 't' and 'pres' are recommended.
 train, test = utils.add_meteo_var('t', '_t', train, test, meteo)
 train, test = utils.add_meteo_var('ff', '_ff', train, test, meteo)
 train, test = utils.add_meteo_var('pres', '_pres', train, test, meteo)
@@ -68,7 +73,7 @@ train, test = utils.add_meteo_var('n', '_n', train, test, meteo)
 train, test = utils.add_meteo_var('rr12', '_rr12', train, test, meteo)
 
 
-# Filling a few remaining NaNs in the test set.
+# Filling the 3 last nan values in the test set.
 test.interpolate(method = 'linear', limit_direction = 'both', inplace = True)
 
 
@@ -112,7 +117,10 @@ train_set = torch.utils.data.TensorDataset(X_train, y_train)
 train_loader = torch.utils.data.DataLoader(train_set, batch_size = 1024, shuffle = True)
 
 
-# Training base model.
+################################################################################
+# BASELINE MODEL
+################################################################################
+
 input_dim = X_train.shape[1]
 output_dim = y_train.shape[1]
 base_model = models.baseline(input_dim, output_dim).to(device)
@@ -125,7 +133,10 @@ print(f"Validation loss: {loss:.4f}")
 utils.plot_residuals(table, 0, y_valid)
 
 
-# Training oversine model.
+################################################################################
+# OVERPARAMETERIZED SINE MODEL
+################################################################################
+
 oversine_model = models.oversine(input_dim, output_dim).to(device)
 oversine_model = utils.simple_train(oversine_model, train_loader, criterion, .01, 50, device)
 
@@ -135,7 +146,10 @@ print(f"Validation loss: {loss:.4f}")
 utils.plot_residuals(table, 0, y_valid)
 
 
-# Training overbase model.
+################################################################################
+# OVERPARAMETERIZED BASE MODEL
+################################################################################
+
 overbase_model = models.overbase(input_dim, output_dim).to(device)
 overbase_model = utils.simple_train(overbase_model, train_loader, criterion, .01, 100, device)
 
@@ -145,25 +159,38 @@ print(f"Validation loss: {loss:.4f}")
 utils.plot_residuals(table, 0, y_valid)
 
 
-# Training orthogonal aggregator.
+################################################################################
+# ORTHOGONAL AGGREGATED MODEL
+################################################################################
+
 mod1 = models.baseline(input_dim, output_dim).to(device)
 mod2 = models.baseline(input_dim, output_dim).to(device)
 mod3 = models.baseline(2*output_dim, output_dim).to(device)
 
 mod1, mod2, mod3 = utils.OL_aggreg_train(mod1, mod2, mod3, train_loader, .01, .1, 1, 1, 100, device)
 
+# Shows results for the whole aggregated model.
 table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
 
 utils.plot_residuals(table, 0, y_valid)
 
+# Shows results for the mod1 alone.
+table1, loss1 = utils.simple_valid(mod1, X_valid, y_valid, criterion, y_scaler)
+print(f"Validation loss: {loss1:.4f}")
 
-# Training overbase and oversine aggregator.
+utils.plot_residuals(table1, 0, y_valid)
+
+
+################################################################################
+# OVERPARAMETERIZED BASELINE AND SINE AGGREAGATED MODEL 
+################################################################################
+
 mod1 = models.overbase(input_dim, output_dim).to(device)
 mod2 = models.oversine(input_dim, output_dim).to(device)
 mod3 = models.baseline(2*output_dim, output_dim).to(device)
 
-mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 200, device)
+mod1, mod2, mod3 = utils.aggreg_train(mod1, mod2, mod3, train_loader, criterion, .01, 100, device)
 
 table, loss = utils.aggreg_valid(mod1, mod2, mod3, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
@@ -171,7 +198,10 @@ print(f"Validation loss: {loss:.4f}")
 utils.plot_residuals(table, 0, y_valid)
 
 
-# Training competitive aggregator.
+################################################################################
+# COMPETITIVE AGGREAGTION MODEL
+################################################################################
+
 mod1 = models.baseline(input_dim, output_dim).to(device)
 mod2 = models.baseline(input_dim, output_dim).to(device)
 mod3 = models.baseline(input_dim, output_dim).to(device)
