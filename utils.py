@@ -122,6 +122,48 @@ def aggreg_train(model1, model2, model3, train_loader, criterion, learning_rate,
     return model1, model2, model3
 
 
+def OL_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, alpha1, alpha2, num_epochs, device):
+    '''
+    Train the orthogonal-aggregated model on the train set.
+    '''
+    model1.train()
+    model2.train()
+    model3.train()
+    opti1 = optim.Adam(model1.parameters(), lr = lr1)
+    opti2 = optim.Adam(model2.parameters(), lr = lr1)
+    opti3 = optim.Adam(model3.parameters(), lr = lr2)
+
+    for epoch in range(num_epochs):
+        ep_loss = .0
+        for X, y in train_loader:
+            X = X.to(device)
+            y = y.to(device)
+
+            opti1.zero_grad()
+            opti2.zero_grad()
+            opti3.zero_grad()
+
+            out1 = model1(X)
+            out2 = model2(X)
+            out12 = torch.cat((out1, out2), dim = 1)
+            out3 = model3(out12)
+        
+            mse_loss = criterion(out3, y)
+            OL_loss = OL(model1, model2, alpha1, alpha2)
+            loss = mse_loss + OL_loss
+            loss.backward()
+
+            opti1.step()
+            opti2.step()
+            opti3.step()
+
+            ep_loss += loss.item()
+        ep_loss = np.sqrt(ep_loss/len(train_loader))
+        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {ep_loss:.4f}, OL loss: {OL_loss:.4f}")
+    
+    return model1, model2, model3
+
+
 def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, train_loader, lr1, lr2, num_epochs, device):
     '''
     Trains the competitive aggregation model with 5 competitors.
