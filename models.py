@@ -3,7 +3,11 @@ import torch.nn as nn
 
 class baseline(nn.Module):
     '''
-    Baseline model with 1 hidden layer and dropout.
+    Baseline model with 1 hidden layer with 512 neurons, dropout and batch normalization.
+    SiLU activation function is used.
+
+    - input_dim: number of features in the input ;
+    - output_dim: number of features in the output.
     '''
     def __init__(self, input_dim, output_dim):
         super(baseline, self).__init__()
@@ -24,7 +28,12 @@ class baseline(nn.Module):
 
 class overbase(nn.Module):
     '''
-    Overparameterized model with 3 hidden layers.
+    Overparameterized model with 3 hidden layers with 1024, 512 and 512 neurons and
+    batch normlization.
+    SiLU activation function is used.
+
+    - input_dim: number of features in the input ;
+    - output_dim: number of features in the output.
     '''
     def __init__(self, input_dim, output_dim):
         super(overbase, self).__init__()
@@ -53,7 +62,12 @@ class overbase(nn.Module):
 
 class oversine(nn.Module):
     '''
-    Overparameterized version with sine activation.
+    Overparameterized model with 3 hidden layers with 1024, 512 and 512 neurons and
+    batch normlization.
+    Sine activation function is used.
+
+    - input_dim: number of features in the input ;
+    - output_dim: number of features in the output.
     '''
     def __init__(self, input_dim, output_dim):
         super(oversine, self).__init__()
@@ -81,8 +95,11 @@ class oversine(nn.Module):
 
 class linear_aggreg(nn.Module):
     '''
-    Linear aggregator for ensembling.
-    Softmax is applied to the parameters to keep them between 0 and 1.
+    Returns a convex combination of the 5 outputs.
+    Linear aggregator for 5 outputs.
+    The weights are constrained to sum to 1 with a softmax function.
+
+    - a1, a2, a3, a4, a5: initial weights for the 5 outputs.
     '''
     def __init__(self, a1, a2, a3, a4, a5):
         super(linear_aggreg, self).__init__()
