@@ -89,8 +89,8 @@ test['BH'] = test['date'].apply(lambda x: x in fr_holidays).astype(int)
 
 
 # Adding covid confinement.
-train['covid'] = (train['date'] >= '2020-03-17') & (train['date'] <= '2021-05-03')
-test['covid'] = (test['date'] >= '2020-03-17') & (test['date'] <= '2021-05-03')
+train['covid'] = ((train['date'] >= '2020-03-17') & (train['date'] <= '2020-05-11')) | ((train['date'] >= '2020-10-30') & (train['date'] <= '2021-12-15'))
+test['covid'] = ((test['date'] >= '2020-03-17') & (test['date'] <= '2020-05-11')) | ((test['date'] >= '2020-10-30') & (test['date'] <= '2021-12-15'))
 train['covid'] = train['covid'].astype(int)
 test['covid'] = test['covid'].astype(int)
 
@@ -125,7 +125,7 @@ input_dim = X_train.shape[1]
 output_dim = y_train.shape[1]
 base_model = models.baseline(input_dim, output_dim).to(device)
 criterion = nn.MSELoss()
-base_model = utils.simple_train(base_model, train_loader, criterion, .01, 50, device, scheduler = True)
+base_model = utils.simple_train(base_model, train_loader, criterion, .01, 10, device, scheduler = True)
 
 table, loss = utils.simple_valid(base_model, X_valid, y_valid, criterion, y_scaler)
 print(f"Validation loss: {loss:.4f}")
