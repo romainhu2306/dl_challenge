@@ -199,7 +199,7 @@ utils.plot_residuals(table, 0, y_valid)
 
 
 ################################################################################
-# COMPETITIVE AGGREAGTION MODEL
+# COMPETITIVE AGGREAGATION MODEL
 ################################################################################
 
 mod1 = models.baseline(input_dim, output_dim).to(device)
