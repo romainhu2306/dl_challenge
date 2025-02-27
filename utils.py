@@ -226,9 +226,10 @@ def OL_aggreg_train(model1, model2, model3, train_loader, lr1, lr2, alpha1, alph
             # Aggregator takes the concatenation of the outputs of the two models.
             out12 = torch.cat((out1, out2), dim = 1)
             out3 = model3(out12)
-
+ 
             # Loss function is the sum of the MSE loss and the Orthogonal loss.
-            mse_loss = nn.MSELoss(out3, y)
+            criterion = nn.MSELoss()
+            mse_loss = criterion(out3, y)
             OL_loss = OL(model1, model2, alpha1, alpha2)
             loss = mse_loss + OL_loss
             loss.backward()
