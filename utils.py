@@ -342,12 +342,6 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
             loss_aggreg.backward()
             opti_aggreg.step()
 
-            opti1.step()
-            opti2.step()
-            opti3.step()
-            opti4.step()
-            opti5.step()
-
             coefs_list1.append(coefs[0].item())
             coefs_list2.append(coefs[1].item())
             coefs_list3.append(coefs[2].item())
