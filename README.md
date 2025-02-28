@@ -18,6 +18,16 @@ This repository contains 3 python scripts :
     - Baseline and sine aggregation model ;
     - Competitive aggregation model ;
 - **train.py**, containing blocks of code to process the data, train the models and display their results.
+- **predict.py**, containing blocks of code to make predictions for submission on codabench, saved in the predictions folder.
+
+## SAVED MODELS
+Contains the saved architectures of our trained models.
+Because of its experimental nature, the competitive aggregation was not saved as its main interest does not lie in its performance.
 
 ## PREDICTIONS
-Prediction file for submission on codabench with the test set.
+Prediction files for submission on codabench with the test set.
+Predictions were realized with temperature and pressure, and without using Covid markers.
+
+## MISCELLANEOUS
+- **X_test**, a torch tensor containing the preprocessed test set ;
+- **y_scaler**, the scikit-learn StandardScaler that was used to scale electricity consumption.

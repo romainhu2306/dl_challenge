@@ -455,4 +455,41 @@ def OL(model1, model2, alpha1, alpha2, eps = 1e-8):
 
     loss = alpha1*torch.abs(dot) + alpha2/(norm1 + eps) + alpha2/(norm2 + eps)
     return loss
+
+
+############################################################################################################
+############################################################################################################
+def simple_predict(X_test, model, scaler):
+    pred = pd.read_csv('template.csv')
+    nrows = len(pred)
+    model.eval()
+    with torch.no_grad():
+        for i in range(nrows):
+            x = X_test[i].unsqueeze(0)
+            y = model(x)
+            pred.iloc[i, 1:] = y[0].numpy()
     
+    pred.iloc[:, 1:] = scaler.inverse_transform(pred.iloc[:, 1:])
+    pred.set_index("date", inplace = True)
+    return pred
+
+
+############################################################################################################
+############################################################################################################
+def aggreg_predict(X_test, mod1, mod2, mod3, scaler):
+    pred = pd.read_csv('template.csv')
+    nrows = len(pred)
+    mod1.eval()
+    mod2.eval()
+    mod3.eval()
+    with torch.no_grad():
+        for i in range(nrows):
+            x = X_test[i].unsqueeze(0)
+            out1 = mod1(x)
+            out2 = mod2(x)
+            out12 = torch.cat((out1, out2), dim = 1)
+            out3 = mod3(out12)
+            pred.iloc[i, 1:] = out3[0].numpy()
+
+    pred.iloc[:, 1:] = scaler.inverse_transform(pred.iloc[:, 1:])
+    return pred
