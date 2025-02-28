@@ -30,4 +30,5 @@ Predictions were realized with temperature and pressure, and without using Covid
 
 ## MISCELLANEOUS
 - **X_test**, a torch tensor containing the preprocessed test set ;
-- **y_scaler**, the scikit-learn StandardScaler that was used to scale electricity consumption.
+- **y_scaler**, the scikit-learn StandardScaler that was used to scale electricity consumption ;
+- **template**, template from the starting kit for predictions.

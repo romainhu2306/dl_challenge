@@ -345,6 +345,8 @@ def competitive_aggreg_train(model1, model2, model3, model4, model5, aggreg, tra
             opti1.step()
             opti2.step()
             opti3.step()
+            opti4.step()
+            opti5.step()
 
             coefs_list1.append(coefs[0].item())
             coefs_list2.append(coefs[1].item())
@@ -464,10 +466,8 @@ def simple_predict(X_test, model, scaler):
     nrows = len(pred)
     model.eval()
     with torch.no_grad():
-        for i in range(nrows):
-            x = X_test[i].unsqueeze(0)
-            y = model(x)
-            pred.iloc[i, 1:] = y[0].numpy()
+        y = model(X_test)
+        pred.iloc[:, 1:] = y.numpy()
     
     pred.iloc[:, 1:] = scaler.inverse_transform(pred.iloc[:, 1:])
     pred.set_index("date", inplace = True)
@@ -478,18 +478,16 @@ def simple_predict(X_test, model, scaler):
 ############################################################################################################
 def aggreg_predict(X_test, mod1, mod2, mod3, scaler):
     pred = pd.read_csv('template.csv')
-    nrows = len(pred)
     mod1.eval()
     mod2.eval()
     mod3.eval()
     with torch.no_grad():
-        for i in range(nrows):
-            x = X_test[i].unsqueeze(0)
-            out1 = mod1(x)
-            out2 = mod2(x)
-            out12 = torch.cat((out1, out2), dim = 1)
-            out3 = mod3(out12)
-            pred.iloc[i, 1:] = out3[0].numpy()
+        out1 = mod1(X_test)
+        out2 = mod2(X_test)
+        out12 = torch.cat((out1, out2), dim = 1)
+        out3 = mod3(out12)
+        pred.iloc[:, 1:] = out3.numpy()
 
     pred.iloc[:, 1:] = scaler.inverse_transform(pred.iloc[:, 1:])
+    pred.set_index("date", inplace = True)
     return pred
